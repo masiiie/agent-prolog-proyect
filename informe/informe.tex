@@ -89,17 +89,17 @@ suficiente para que el robot recoja y limpie todo antes de que se desordene el a
 ni\~nos nunca ser\'a cumplido, y por tanto el de la limpieza tampoco. 
 Hemos escuchado algunas veces que el comportamiento reactivo figura en realizar acciones 
 random en cada turno. 
-El nuestro es aparentemente similar al proactivo, al menos en el inicio del codigo, pero en 
+El nuestro es aparentemente similar al proactivo, al menos en el inicio del c\'odigo, pero en 
 realidad, en lugar de enfocarse ciegamente en recoger
-primero a todos ninnos siempre realiza la accion mas inmediata. Los mas inmediato realmente 
-seria limpiar siempre primero, pero en ninguno de los dos
-casos lo consideramos, puesto que el robot es el primero en actuar en cada turno y justo 
-despues de su actuacion algun ninno puede ensuciar la casilla que
+primero a todos ni\~nos siempre realiza la acci\'on m\'as inmediata. Lo m\'as inmediato realmente 
+ser\'ia limpiar siempre primero, pero en ninguno de los dos
+casos fue considerada esta estrategia, puesto que el robot es el primero en actuar en cada turno y justo 
+despu\'es de su actuaci\'on alg\'un ni\~no puede ensuciar la casilla que
 acaba de limpiar. Por eso para los dos casos tenemos que siempre que se pueda deje a un 
-ninno en el corral si carga alguno y que recoja a cualquiera
-que tenga cerca si no carga ninguno. Entonces, regresando a la reactividad, este ademas de 
-hacer la accion mas inmediata, se mantiene recogiendo ninnos,
-o al menos intentandolo, mientras el porciento de suciedad este por debajo de 40, y cuando se 
+ni\~no en el corral si carga alguno y que recoja a cualquiera
+que tenga cerca si no carga ninguno. Entonces, regresando a la reactividad, este adem\~as de 
+hacer la acci\~on m\'as inmediata, se mantiene recogiendo ni\~nos,
+o al menos intent\'andolo, mientras el porciento de suciedad este por debajo de 40, y cuando se 
 alcance este tope, ya empieza a preocuparse por priorizar la limpieza.
 Tambien hemos asumido que el robot puede limpiar aunque lleve un ninno cargado. En 
 resumen, creemos que un agente reactivo no es aquel que no se plantee
