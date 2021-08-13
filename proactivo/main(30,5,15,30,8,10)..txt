@@ -1,0 +1,19 @@
+suciedad:35.333333333333336
+minuto:1000
+100 veces t
+
+suciedad:36.666666666666664
+minuto:1000
+100 veces t
+
+suciedad:38
+minuto:1000
+100 veces t
+
+suciedad:46
+minuto:1000
+100 veces t
+
+suciedad:32
+minuto:1000
+100 veces t

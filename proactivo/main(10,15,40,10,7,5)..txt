@@ -1,0 +1,7 @@
+suciedad:60.666666666666664
+minuto:121
+Despedido
+
+suciedad:60
+minuto:126
+Despedido

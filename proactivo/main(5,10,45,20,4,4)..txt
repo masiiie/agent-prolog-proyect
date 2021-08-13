@@ -1,0 +1,32 @@
+suciedad:22
+minuto:400
+100 veces t
+
+suciedad:30
+minuto:400
+100 veces t
+
+suciedad:38
+minuto:400
+100 veces t
+
+suciedad:28
+minuto:400
+100 veces t
+
+suciedad:28
+minuto:400
+100 veces t
+
+suciedad:24
+minuto:400
+100 veces t
+
+suciedad:36
+minuto:400
+100 veces t
+
+suciedad:38
+minuto:400
+100 veces t
+

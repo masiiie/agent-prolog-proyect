@@ -1,0 +1,175 @@
+\documentclass{llncs}
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+\usepackage{rotating}
+\RequirePackage{graphicx}
+\RequirePackage[spanish]{babel}
+\RequirePackage[utf8]{inputenc}
+\selectlanguage{spanish}
+\usepackage{verbatim} 
+
+
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Prolog,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\newcommand{\mykeywords}[1]{\par\addvspace\baselineskip \noindent \textbf{Palabras Claves:} \enspace\ignorespaces#1}
+
+\newtheorem{teo}{Teorema}
+
+\begin{document}
+
+\title{Proyecto de Simulaci\'on de Agentes.\\ Programaci\'on Declarativa. Prolog.}
+
+\author{
+  Masiel Villalba Carmenate 
+  \email{villalbamasiel@gmail.com}
+  \institute{Facultad de Matem\'atica y Computaci\'on (MATCOM), \\Universidad de la Habana (UH), Cuba.}
+  }
+
+\titlerunning{Informe de Programaci\'on Declarativa y Simulaci\'on.} 
+\authorrunning{Masiel Villalba Carmenate}
+
+
+\maketitle
+
+\section{Definici\'on del problema}
+
+Dado un tablero donde en cada casilla puede aparecer alguno de los siguientes elementos:
+
+\begin{itemize}
+\item suciedad
+\item ni\~nos
+\item corrales
+\item obst\'aculos
+\end{itemize}
+
+Existen las siguientes leyes:
+
+\begin{itemize}
+\item Los ni\~nos se mueven y ensucian arbitrariamente.
+\item Las casillas de tipo obst\'aculo no pueden ser rebasadas por ning\'un agente.
+\item Si un ni\~no est\'a en una casilla de tipo corral, entonces no puede moverse ni ensuciar.
+\item Existe un intervalo de tiempo $t$ seg\'un el cual el tablero cambia aleatoriamente.
+\end{itemize}
+
+
+Se busca implementar un agente que consiga limpiar el tablero y ubicar a todos los ni\~nos en una casilla corral antes de que se rebase un umbral de suciedad predeterminado, en caso contrario se considera que queda despedido.
+
+
+\section{Principales ideas}
+
+Para la implementaci\'on del robot se modelaron dos comportamientos: reactivo y proactivo. 
+
+\subsection{Agente proactivo}
+El robot proactivo se caracteriza por tener un plan muy bien definido, e ``inquebrantable'': recoger primero a todos los ni\~nos.
+Puesto que ellos son los responsables de la suciedad, una vez que est\'en tranquilos se puede comenzar con la limpieza y que no sea en vano. Esta planificaci\'on para cuando el intervalo de cambio del tablero es grande, es verdaderamente ideal, pues ser\'ia 
+suficiente para que el robot recoja y limpie todo antes de que se desordene el ambiente de nuevo. Pero para cuando el $t$ es peque\~no, se trata entonces de un ambiente din\'amico, en el que el objetivo de ubicar a los
+ni\~nos nunca ser\'a cumplido, y por tanto el de la limpieza tampoco. 
+Hemos escuchado algunas veces que el comportamiento reactivo figura en realizar acciones 
+random en cada turno. 
+El nuestro es aparentemente similar al proactivo, al menos en el inicio del codigo, pero en 
+realidad, en lugar de enfocarse ciegamente en recoger
+primero a todos ninnos siempre realiza la accion mas inmediata. Los mas inmediato realmente 
+seria limpiar siempre primero, pero en ninguno de los dos
+casos lo consideramos, puesto que el robot es el primero en actuar en cada turno y justo 
+despues de su actuacion algun ninno puede ensuciar la casilla que
+acaba de limpiar. Por eso para los dos casos tenemos que siempre que se pueda deje a un 
+ninno en el corral si carga alguno y que recoja a cualquiera
+que tenga cerca si no carga ninguno. Entonces, regresando a la reactividad, este ademas de 
+hacer la accion mas inmediata, se mantiene recogiendo ninnos,
+o al menos intentandolo, mientras el porciento de suciedad este por debajo de 40, y cuando se 
+alcance este tope, ya empieza a preocuparse por priorizar la limpieza.
+Tambien hemos asumido que el robot puede limpiar aunque lleve un ninno cargado. En 
+resumen, creemos que un agente reactivo no es aquel que no se plantee
+objetivos, claro que no, sino que es sensible al ambiente, y sabe reordenar sus prioridades 
+segun como sea afectado por las condiciones en que esta.
+Esta consciente de que sus planes pueden frustrarse por razones externas y por eso siempre 
+hace lo que es mas seguro, m\'as urgente.
+
+\section{Funci\'on de arranque}
+
+Los argumentos que recibe la funci\'on principal para correr el programa son:
+\begin{itemize}
+\item[N:] cantidad de filas
+\end{itemize}
+
+\begin{lstlisting}
+// proyecto.pl
+main(N,M,Ps,Po,Ninnos,T) :-
+    retractall(tablero(X)), retractall(no_ninnos(X)),
+    tablero(N,M,Tablero), assert(tablero(Tablero)), assert(no_ninnos(Ninnos)),
+    Mult is N*M,
+    parte(Mult,Ps,Cs),
+    parte(Mult,Po,Co),
+    generar_tablero(N,M,Cs,Co),
+    simulacion(1,T,N,M).
+\end{lstlisting}
+
+
+\section{Flujo de la simulaci\'on}
+
+\begin{lstlisting}
+// proyecto.pl
+simulacion(Tiempo,_,N,M) :- 
+    porciento_suciedad(P), 60=<P,
+    mi_write(['la suciedad a alcanzado el ',P,' pociento.']),
+    writeln('El robot queda despedido, termina la simulacion'),
+    informe(N,M,Tiempo,'Despedido'),!.
+simulacion(Tiempo,_,_,_) :-
+    findall(X,sucio(X),[]), findall(X,(ninno(X),not(corral(X))),[]),
+    write('todo esta limpio y ordenado, termina la simulacion'),
+    informe(N,M,Tiempo,'OK'), !.
+simulacion(Tiempo,Interval,_,_) :-
+    Tiempo=:=100*Interval, write('se ha alcanzado 100 veces t, termina la simulacion'), 
+    informe(N,M,Tiempo,'100 veces t'), !.
+simulacion(Tiempo,Interval,N,M) :-
+    mi_write(['\n\n\nESTAMOS EN EL MINUTO ',Tiempo]),
+    robot(Robot_pos), cuadricula(Robot_pos,Cuadro),
+    writeln('ACTUACION DEL ROBOT'),!,
+    actua_robot_reactivo(Robot_pos,Cuadro),
+    ((findall(X,  ninno(X), ListNinos), mover_Ninnos(ListNinos)) ; true),   
+    Modulo is Tiempo mod Interval, try_change_enviroment(Modulo,N,M),
+    T is Tiempo+1, ver_tablero,
+    simulacion(T,Interval,N,M).
+\end{lstlisting}
+
+
+\section{Lista de predicados de Prolog m\'as utilizados}
+
+\begin{itemize}
+\item numlist/3
+\end{itemize}
+
+Ver funcionamiento de cada uno en \url{https://www.swi-prolog.org/}.
+
+\begin{thebibliography}{5}  
+
+\bibitem{programmingProlog}	
+	Bramer, Max:
+	Logic programming with Prolog,
+	Springer, 
+	2005
+\end{thebibliography}
+\end{document}
