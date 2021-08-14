@@ -69,13 +69,14 @@ Existen las siguientes leyes:
 
 \begin{itemize}
 \item Los ni\~nos se mueven y ensucian arbitrariamente.
-\item Las casillas de tipo obst\'aculo no pueden ser rebasadas por ning\'un agente.
+\item Las casillas de tipo obst\'aculo no pueden ser ocupadas por ning\'un agente.
+\item Los ni\~nos pueden mover los obst\'aculos.
 \item Si un ni\~no est\'a en una casilla de tipo corral, entonces no puede moverse ni ensuciar.
 \item Existe un intervalo de tiempo $t$ seg\'un el cual el tablero cambia aleatoriamente.
 \end{itemize}
 
 
-Se busca implementar un agente que consiga limpiar el tablero y ubicar a todos los ni\~nos en una casilla corral antes de que se rebase un umbral de suciedad predeterminado, en caso contrario se considera que queda despedido.
+Se busca implementar un agente que consiga limpiar el tablero y ubicar a todos los ni\~nos en una casilla corral antes de que se rebase un umbral de suciedad predeterminado, en caso contrario se considera que queda despedido. Este agente no puede mover los obst\'aculos de lugar pero s\'i puede cargar o dejar a un ni\~no en una posici\'on determinada.
 
 
 \section{Principales ideas}
@@ -89,6 +90,8 @@ suficiente para que el robot recoja y limpie todo antes de que se desordene el a
 ni\~nos nunca ser\'a cumplido, y por tanto el de la limpieza tampoco. 
 Hemos escuchado algunas veces que el comportamiento reactivo figura en realizar acciones 
 random en cada turno. 
+
+\subsection{Agente reactivo}
 El nuestro es aparentemente similar al proactivo, al menos en el inicio del c\'odigo, pero en 
 realidad, en lugar de enfocarse ciegamente en recoger
 primero a todos ni\~nos siempre realiza la acci\'on m\'as inmediata. Lo m\'as inmediato realmente 
@@ -101,18 +104,25 @@ que tenga cerca si no carga ninguno. Entonces, regresando a la reactividad, este
 hacer la acci\~on m\'as inmediata, se mantiene recogiendo ni\~nos,
 o al menos intent\'andolo, mientras el porciento de suciedad este por debajo de 40, y cuando se 
 alcance este tope, ya empieza a preocuparse por priorizar la limpieza.
-Tambien hemos asumido que el robot puede limpiar aunque lleve un ninno cargado. En 
+Tambien hemos asumido que el robot puede limpiar aunque lleve un ni\~no cargado. En 
 resumen, creemos que un agente reactivo no es aquel que no se plantee
 objetivos, claro que no, sino que es sensible al ambiente, y sabe reordenar sus prioridades 
-segun como sea afectado por las condiciones en que esta.
-Esta consciente de que sus planes pueden frustrarse por razones externas y por eso siempre 
-hace lo que es mas seguro, m\'as urgente.
+seg\'un como sea afectado por las condiciones en que esta.
+Est\'a consciente de que sus planes pueden frustrarse por razones externas y por eso siempre 
+hace lo que es m\'as seguro, m\'as urgente.
 
-\section{Funci\'on de arranque}
+
+\section{Caracter\'isticas de la implementaci\'on} 
+\subsection{Funci\'on de arranque}
 
 Los argumentos que recibe la funci\'on principal para correr el programa son:
 \begin{itemize}
-\item[N:] cantidad de filas
+\item N: cantidad de filas del tablero a generar.
+\item M: cantidad de columnas del tablero a generar.
+\item Ps: porciento de suciedad inicial respecto a la cantidad de casillas del tablero.
+\item Po: porciento de obst\'aculos respecto a la cantidad de casillas del tablero.
+\item Ni\~nos: cantidad de ni\~nos a ubicar.
+\item T: periodo de cambio del ambiente.
 \end{itemize}
 
 \begin{lstlisting}
@@ -127,6 +137,51 @@ main(N,M,Ps,Po,Ninnos,T) :-
     simulacion(1,T,N,M).
 \end{lstlisting}
 
+\subsection{L\'ogica y hechos}
+La representaci\'on del tablero se consigui\'o a trav\'es de predicados din\'amicos.
+Se tiene:
+\begin{itemize}
+\item corral/1
+\item ni\~no/1
+\item robot/1
+\item sucio/1
+\item obstaculo/1
+\end{itemize}
+
+
+Cada uno recibe una tupla que representa una casilla y retornan \texttt{true} si en esa posic\'on del tablero hay un elemento de ese tipo. Por ejemplo, \texttt{sucio((4,5))} es \texttt{true} si la casilla (4,5) est\'a sucia. Para ubicar o eliminar un elemento en una casilla se emplean los predicados \texttt{assert} y \texttt{retracall} respectivamente. 
+La forma en que se dise\~no el tablero garantiza que nunca se haga \texttt{assert} a una posici\'on que no existe en el tablero.
+
+\subsection{Predicados principales}
+
+Algunos predicados han sido imprescindibles para modelar la naturaleza del problema:
+
+\begin{itemize}
+\item \texttt{carga\_ni\~no/0}: es verdadero si el robot lleva cargado alg\'un ni\~no. Cuando el robot carga un ni\~no, este "deja de existir" temporalmente, puesto que ni\~no(Casilla\_del\_robot) es falso.
+\item \texttt{tablero/1}, \texttt{no\_ni\~nos/1}: no ser\'ian tan necesarios pero se han agregado para tener m\'as a mano dos datos  
+importantes: la cantidad de ni\~nos y las casillas del tablero $N*M$, que en una misma ejecuci\'on no cambian. \texttt{no\_ni\~nos(X)} es verdader si hay \texttt{X} ni\~nos en el 
+tablero. 
+\end{itemize}
+
+
+\section{Generando tableros aleatorios}
+
+\begin{lstlisting}
+// proyecto.pl
+generar_tablero(N,M,Ns,No):-
+    limpiar_todo, tablero(Tablero), no_ni\~nos(Nc),
+    mi_write(['Corrales: ',Nc,' Sucias: ',Ns,' Obstaculos: ',No]),
+    lograr_K_corrales(Tablero,Nc,N,M,0),
+    findall(C,(member(C,Tablero),not(ni\~no(C))),Noboy),
+    action_random(1,Noboy,poner_robot),
+    findall(C,(member(C,Tablero), not(corral(C))),Nocorral), 
+    action_random(Ns,Nocorral,poner_suciedad),
+    findall(G,vacia(G),Para_obs), 
+    action_random(No,Para_obs,poner_obstaculo).
+\end{lstlisting}
+
+
+
 
 \section{Flujo de la simulaci\'on}
 
@@ -138,7 +193,7 @@ simulacion(Tiempo,_,N,M) :-
     writeln('El robot queda despedido, termina la simulacion'),
     informe(N,M,Tiempo,'Despedido'),!.
 simulacion(Tiempo,_,_,_) :-
-    findall(X,sucio(X),[]), findall(X,(ninno(X),not(corral(X))),[]),
+    findall(X,sucio(X),[]), findall(X,(ni\~no(X),not(corral(X))),[]),
     write('todo esta limpio y ordenado, termina la simulacion'),
     informe(N,M,Tiempo,'OK'), !.
 simulacion(Tiempo,Interval,_,_) :-
@@ -149,17 +204,21 @@ simulacion(Tiempo,Interval,N,M) :-
     robot(Robot_pos), cuadricula(Robot_pos,Cuadro),
     writeln('ACTUACION DEL ROBOT'),!,
     actua_robot_reactivo(Robot_pos,Cuadro),
-    ((findall(X,  ninno(X), ListNinos), mover_Ninnos(ListNinos)) ; true),   
+    ((findall(X,  ni\~no(X), ListNi\~nos), mover_Ni\~nos(ListNi\~nos)) ; true),   
     Modulo is Tiempo mod Interval, try_change_enviroment(Modulo,N,M),
     T is Tiempo+1, ver_tablero,
     simulacion(T,Interval,N,M).
 \end{lstlisting}
 
 
-\section{Lista de predicados de Prolog m\'as utilizados}
+\section{Lista de predicados de Prolog m\'as utilizados en el proyecto}
 
 \begin{itemize}
-\item numlist/3
+\item \texttt{assert/1}
+\item \texttt{findall/3}
+\item \texttt{retractall/1}
+\item \texttt{numlist/3}
+\item \texttt{member/2}
 \end{itemize}
 
 Ver funcionamiento de cada uno en \url{https://www.swi-prolog.org/}.

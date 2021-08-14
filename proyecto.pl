@@ -1,5 +1,5 @@
-:- dynamic corral/1, ninno/1, robot/1, sucio/1, obstaculo/1, 
-    tablero/1, no_ninnos/1, carga_ninno/0.
+:- dynamic corral/1, niño/1, robot/1, sucio/1, obstaculo/1, 
+    tablero/1, no_niños/1, carga_niño/0.
 
 
 mi_write([]):-nl.
@@ -12,8 +12,8 @@ tablero(N,M,Tablero):-
     numlist(1,N,Filas),numlist(1,M,Columnas),findall((X,Y),(member(X,Filas),member(Y,Columnas)),Tablero).
 
 poner_corral(X):- corral(X) ; assert(corral(X)).
-poner_ninno(X):- ninno(X) ; (not(obstaculo(X)), assert(ninno(X))).
-poner_robot(X):- robot(X) ;  (not(obstaculo(X)), not(ninno(X)), assert(robot(X))).
+poner_niño(X):- niño(X) ; (not(obstaculo(X)), assert(niño(X))).
+poner_robot(X):- robot(X) ;  (not(obstaculo(X)), not(niño(X)), assert(robot(X))).
 poner_suciedad(X):- sucio(X) ; assert(sucio(X)).
 poner_obstaculo(X) :- obstaculo(X) ; assert(obstaculo(X)).
 
@@ -31,12 +31,12 @@ colinda(X,Corral,N,M):- member(Y,Corral), vecina_directa(X,Y),casilla_interior(X
 frontera_corral(Corral,Frontera,N,M):-findall((X,Y),colinda((X,Y),Corral,N,M),Frontera).
 
 vacia(X):-
-    tablero(Tablero), member(X,Tablero),not(corral(X);ninno(X);robot(X);sucio(X);obstaculo(X)).
+    tablero(Tablero), member(X,Tablero),not(corral(X);niño(X);robot(X);sucio(X);obstaculo(X)).
 
-poner_K_ninnos(0,_):- !.
-poner_K_ninnos(K,Vacias):- 
-    elegir_random_lista(Vacias,Cninno),poner_ninno(Cninno),
-    K1 is K-1, select(Cninno,Vacias,V2), poner_K_ninnos(K1,V2).
+poner_K_niños(0,_):- !.
+poner_K_niños(K,Vacias):- 
+    elegir_random_lista(Vacias,Cniño),poner_niño(Cniño),
+    K1 is K-1, select(Cniño,Vacias,V2), poner_K_niños(K1,V2).
 
 do_corral([]).
 do_corral([X|Cor_rest]):-do_corral(Cor_rest),poner_corral(X).
@@ -53,13 +53,14 @@ corral(Disponibles,Frontera,[X|Cor_rest],Size,N,M):-
     intersection(Frontera2,Disponibles,Posibles), aux_corral(Posibles,Frontera,Frontera2,Cor_rest,X,N,M).
 
 lograr_K_corrales(Disponibles,K,N,M,Logrados):- 
-    (length(Disponibles,0); K=:=0), tablero(Tablero), poner_K_ninnos(Logrados,Tablero),!.
+    (length(Disponibles,0); K=:=0), tablero(Tablero), poner_K_niños(Logrados,Tablero),!.
 lograr_K_corrales(Disponibles,K,N,M,Logrados):-
     length(Disponibles,Dlen), Mm is round(Dlen/K), Mm1 is Mm+1,Mr is random(Mm1), Size is Mr+1, 
     (corral(Disponibles,Frontera,Pre_corral,Size,N,M);true),
     delete(Pre_corral,nil,Corral), mi_write(['nuevo corral: ',Corral]), do_corral(Corral),!,
     union(Corral,Frontera,No_disp),findall(C,(member(C,Disponibles),not(member(C,No_disp))),New_disp),
     L is Logrados+1, K1 is K-1, lograr_K_corrales(New_disp,K1,N,M,L).
+
 
 distancia((X,Y),(V,W), K) :- 
     Cf is (V-X)**2,
@@ -94,7 +95,7 @@ mas_cercana(A,[D|L],B) :-
 avanzar(X,D,Pasos,Buscadas,_) :- 
     dirigirse(X,D,Pasos,Buscadas, Final), mover_robot(X,Final), !.
 avanzar(X,D,Pasos,Buscadas,Q) :- 
-    cuadricula(X,Cuadro), findall(G,(member(G,Cuadro),not(ninno(G);obstaculo(G))),[L|Lr]),
+    cuadricula(X,Cuadro), findall(G,(member(G,Cuadro),not(niño(G);obstaculo(G))),[L|Lr]),
     mas_cercana(Q,[L|Lr],Segura), mover_robot(X,Segura),writeln('\navanzar caso 2').
 
 mover_robot_mas_cercano(_,[],_) :- writeln('fallo mover_robot_mas_cercano'), fail,!.
@@ -104,18 +105,18 @@ mover_robot_mas_cercano(X,Buscadas,Pasos) :-
         
 
 actua_robot_proactivo(Robot_pos,Cuadro) :- 
-    carga_ninno, findall(X,( member(X,Cuadro), corral(X), not(ninno(X))), [P|R]),
-    poner_ninno(P), retractall(carga_ninno), mi_write(['robot proactivo deja nino en ',P]), !. 
+    carga_niño, findall(X,( member(X,Cuadro), corral(X), not(niño(X))), [P|R]),
+    poner_niño(P), retractall(carga_niño), mi_write(['robot proactivo deja niño en ',P]), !. 
 actua_robot_proactivo(Robot_pos,_) :-
-    carga_ninno, findall(X,(corral(X),not(ninno(X))),Corrales), mover_robot_mas_cercano(Robot_pos,Corrales,2),
-    mi_write(['robot proactivo lleva un ninno cargado y se dirige al corral mas cercano ']),!.
+    carga_niño, findall(X,(corral(X),not(niño(X))),Corrales), mover_robot_mas_cercano(Robot_pos,Corrales,2),
+    mi_write(['robot proactivo lleva un niño cargado y se dirige al corral mas cercano ']),!.
 actua_robot_proactivo(Robot_pos,Cuadro) :-
-    findall(X,( member(X,Cuadro), ninno(X), not(corral(X)) ), [P|R]), 
-    retractall(ninno(P)), mover_robot(Robot_pos,P), assert(carga_ninno), 
-    mi_write(['robot proactivo se mueve a ',P,' y carga el nino']),!.
+    findall(X,( member(X,Cuadro), niño(X), not(corral(X)) ), [P|R]), 
+    retractall(niño(P)), mover_robot(Robot_pos,P), assert(carga_niño), 
+    mi_write(['robot proactivo se mueve a ',P,' y carga el niño']),!.
 actua_robot_proactivo(Robot_pos,_) :-
-    findall(X,( ninno(X), not(corral(X)) ),[N|R]), mover_robot_mas_cercano(Robot_pos,[N|R],1),
-    mi_write(['robot proactivo se dirige a buscar ninnos ']),!.
+    findall(X,( niño(X), not(corral(X)) ),[N|R]), mover_robot_mas_cercano(Robot_pos,[N|R],1),
+    mi_write(['robot proactivo se dirige a buscar niños ']),!.
 actua_robot_proactivo(Robot_pos,_) :-
     sucio(Robot_pos), retractall(sucio(Robot_pos)),
     mi_write(['robot proactivo limpia ',Robot_pos]),!.
@@ -129,42 +130,42 @@ porciento_suciedad(P) :-
 
 
 actua_robot_reactivo(Robot_pos,Cuadro) :-
-    carga_ninno, findall(X,( member(X,Cuadro), corral(X), not(ninno(X))), [P|R]),
-    poner_ninno(P), retractall(carga_ninno), 
-    mi_write(['robot reactivo deja nino en ',P]), !. 
+    carga_niño, findall(X,( member(X,Cuadro), corral(X), not(niño(X))), [P|R]),
+    poner_niño(P), retractall(carga_niño), 
+    mi_write(['robot reactivo deja niño en ',P]), !. 
 actua_robot_reactivo(Robot_pos,Cuadro) :-
-    not(carga_ninno), findall(X,( member(X,Cuadro), ninno(X), not(corral(X)) ), [P|R]), 
-    retractall(ninno(P)), mover_robot(Robot_pos,P), assert(carga_ninno), 
-    mi_write(['robot reactivo se mueve a ',P,' y carga el nino']),!.
+    not(carga_niño), findall(X,( member(X,Cuadro), niño(X), not(corral(X)) ), [P|R]), 
+    retractall(niño(P)), mover_robot(Robot_pos,P), assert(carga_niño), 
+    mi_write(['robot reactivo se mueve a ',P,' y carga el niño']),!.
 actua_robot_reactivo(Robot_pos,_) :-
     sucio(Robot_pos), retractall(sucio(Robot_pos)),
     mi_write(['robot reactivo limpia ',Robot_pos]),!.
 actua_robot_reactivo(Robot_pos,_) :-
-    carga_ninno, porciento_suciedad(P), P< 40,
-    findall(X,(corral(X),not(ninno(X))),Corrales), mover_robot_mas_cercano(Robot_pos,Corrales,2),
-    mi_write(['robot reactivo lleva un ninno cargado y se dirige al corral mas cercano ']),!.
+    carga_niño, porciento_suciedad(P), P< 40,
+    findall(X,(corral(X),not(niño(X))),Corrales), mover_robot_mas_cercano(Robot_pos,Corrales,2),
+    mi_write(['robot reactivo lleva un niño cargado y se dirige al corral mas cercano ']),!.
 actua_robot_reactivo(Robot_pos,_) :-
-    porciento_suciedad(P), (P>40 ; findall(X,( ninno(X), not(corral(X)) ),[])) , 
+    porciento_suciedad(P), (P>40 ; findall(X,( niño(X), not(corral(X)) ),[])) , 
     findall(X,sucio(X),[N|R]), mover_robot_mas_cercano(Robot_pos,[N|R],1),
     mi_write(['robot reactivo se dirige a las casillas sucias ']),!.
 actua_robot_reactivo(Robot_pos,_) :-
-    findall(X,( ninno(X), not(corral(X)) ),[N|R]), mover_robot_mas_cercano(Robot_pos,[N|R],1),
-    mi_write(['robot reactivo se dirige a buscar ninnos ']),!.
+    findall(X,( niño(X), not(corral(X)) ),[N|R]), mover_robot_mas_cercano(Robot_pos,[N|R],1),
+    mi_write(['robot reactivo se dirige a buscar niños ']),!.
 
 
 limpiar_todo:- 
     write('Hola!!!!\n'),
-    retractall(ninno(X)), retractall(corral(X)), retractall(robot(X)), 
-    retractall(sucio(X)), retractall(obstaculo(X)), retractall(carga_ninno),
+    retractall(niño(X)), retractall(corral(X)), retractall(robot(X)), 
+    retractall(sucio(X)), retractall(obstaculo(X)), retractall(carga_niño),
     write('Todo esta limpio!!!\n').
 
 
 ver_tablero :- 
     writeln('\nTABLERO'), porciento_suciedad(P), mi_write(['porciento suciedad: ',P]),
-    findall(X,ninno(X),N), mi_write(['ninnos: ',N]),
-    findall(X,(ninno(X),not(corral(X))),Nfc), length(Nfc,Nfclen), mi_write(['hay fuera del corral: ',Nfclen]),
+    findall(X,niño(X),N), mi_write(['niños: ',N]),
+    findall(X,(niño(X),not(corral(X))),Nfc), length(Nfc,Nfclen), mi_write(['hay fuera del corral: ',Nfclen]),
     findall(X,robot(X),R), mi_write(['robot: ',R]),
-    findall(X,carga_ninno,Cn), mi_write(['carga ninno ',Cn]).
+    findall(X,carga_niño,Cn), mi_write(['carga niño ',Cn]).
 
 action_random(_,[],_):-!.
 action_random(V,_,_):- V<1,!.
@@ -172,11 +173,18 @@ action_random(Veces,Posibles,Action):-
     elegir_random_lista(Posibles,X), T =.. [Action,X], (call(T);true), 
     V is Veces-1, select(X,Posibles,P), action_random(V,P,Action).
 
+
+/*
+N: cantidad de filas del tablero a generar
+M: cantidad de columnas del tablero a generar
+Ns: cantidad de casillas sucias iniciales
+No: cantidad de obstaculos a ubicar
+*/
 generar_tablero(N,M,Ns,No):-
-    limpiar_todo, tablero(Tablero), no_ninnos(Nc),
-    mi_write(['Corrales: ',Nc,' Sucias: ',Ns,' Obstaculos: ',No]),
-    lograr_K_corrales(Tablero,Nc,N,M,0),
-    findall(C,(member(C,Tablero),not(ninno(C))),Noboy),
+    limpiar_todo, tablero(Tablero), no_niños(Nc),
+    mi_write(['Corrales: ', Nc,' Sucias: ', Ns,' Obstaculos: ', No]),
+    lograr_K_corrales(Tablero, Nc, N, M, 0),
+    findall(C,(member(C,Tablero),not(niño(C))),Noboy),
     action_random(1,Noboy,poner_robot),
     findall(C,(member(C,Tablero), not(corral(C))),Nocorral), 
     action_random(Ns,Nocorral,poner_suciedad),
@@ -196,8 +204,8 @@ try_change_enviroment(0,N,M) :-
 
 
 
-ninnoAgente(Pos):-
-               ninnoPuedeMoverse(Pos),
+niñoAgente(Pos):-
+               niñoPuedeMoverse(Pos),
                casillas_Posibles(Pos, Posiciones),
                selectMovSuc(Action),!,
                ejecutarAction(Pos, Action, Posiciones).
@@ -223,17 +231,17 @@ selectMovSuc(Num):-
 
 ejecutarAction(Pos, Action, Posiciones):-
                 Action =:= 1,
-                mi_write(['el ninno de ',Pos,' va a ensuciar']),
+                mi_write(['el niño de ',Pos,' va a ensuciar']),
                 reglas_ParaEnsuciar(Posiciones), !.
 
 ejecutarAction(Pos, Action, Posiciones):-
                 Action =:= 2,
-                selectPositionNinno(Posiciones, NewPos),         
+                selectPositionniño(Posiciones, NewPos),         
                 intentaMoverse(Pos, NewPos).
 
 
 
-selectPositionNinno(Posiciones, Pos):-
+selectPositionniño(Posiciones, Pos):-
                 length(Posiciones, Ind),
                 P is random(Ind),
                 Ps is P + 1,
@@ -243,21 +251,21 @@ selectPositionNinno(Posiciones, Pos):-
 intentaMoverse(ActPos, NewPos):-
                obstaculo(NewPos),
                mover_Obstaculo(ActPos, NewPos),
-               mi_write(['el ninno de ',ActPos,' se mueve a ',NewPos]),!.
+               mi_write(['el niño de ',ActPos,' se mueve a ',NewPos]),!.
 intentaMoverse(ActPos, NewPos):-
                not(obstaculo(NewPos)),
                not(robot(NewPos)),
-               not(ninno(NewPos)),
-               retractall(ninno(ActPos)),
-               assert(ninno(NewPos)), 
-               mi_write(['el ninno de ',ActPos,' se mueve a ',NewPos]).
+               not(niño(NewPos)),
+               retractall(niño(ActPos)),
+               assert(niño(NewPos)), 
+               mi_write(['el niño de ',ActPos,' se mueve a ',NewPos]).
 
 
 mover_Obstaculo((X, Y), (X1, Y1)):-
                 recorre_obs((X1, Y1), T),
-                retractall(ninno(X, Y)),
+                retractall(niño(X, Y)),
                 retractall(obstaculo((X1, Y1))),
-                assert(ninno((X1, Y1))),
+                assert(niño((X1, Y1))),
                 assert(obstaculo(T)).
 
 
@@ -273,12 +281,12 @@ recorre_obs((X, Y), Pos):-
 
 
 
-ninnoPuedeMoverse((X, Y)):-
+niñoPuedeMoverse((X, Y)):-
                 not(corral((X, Y))), not(robot((X, Y))).
 
 
 reglas_ParaEnsuciar(List):-
-                cantNinnos(List, Cant),
+                cantniños(List, Cant),
                 casos(Cant, EnsRan),
                 buscarRandom(List, EnsRan, Aens),
                 ensuciar_Casillas(Aens).
@@ -299,8 +307,8 @@ buscarRandom(List, Count, Result):-
             buscarRandom(List, C1, T).
 
 
-cantNinnos(List, Cant):-
-        findall(X, (member(X, List), ninno(X)), Temp),
+cantniños(List, Cant):-
+        findall(X, (member(X, List), niño(X)), Temp),
         length(Temp, Cant).
 
 
@@ -333,10 +341,10 @@ ensuciar_Casillas([X|Y]):-
        not(ensuciarCasilla(X)),
        ensuciar_Casillas(Y).
 
-mover_Ninnos([]):- !.
-mover_Ninnos([X|Y]):-
-            (ninnoAgente(X) ; true),!,
-            mover_Ninnos(Y).
+mover_niños([]):- !.
+mover_niños([X|Y]):-
+            (niñoAgente(X) ; true),!,
+            mover_niños(Y).
 
 
 simulacion(Tiempo,_,N,M) :- 
@@ -345,7 +353,7 @@ simulacion(Tiempo,_,N,M) :-
     writeln('El robot queda despedido, termina la simulacion'),
     informe(N,M,Tiempo,'Despedido'),!.
 simulacion(Tiempo,_,_,_) :-
-    findall(X,sucio(X),[]), findall(X,(ninno(X),not(corral(X))),[]),
+    findall(X,sucio(X),[]), findall(X,(niño(X),not(corral(X))),[]),
     write('todo esta limpio y ordenado, termina la simulacion'),
     informe(N,M,Tiempo,'OK'), !.
 simulacion(Tiempo,Interval,_,_) :-
@@ -356,7 +364,7 @@ simulacion(Tiempo,Interval,N,M) :-
     robot(Robot_pos), cuadricula(Robot_pos,Cuadro),
     writeln('ACTUACION DEL ROBOT'),!,
     actua_robot_reactivo(Robot_pos,Cuadro),
-    ((findall(X,  ninno(X), ListNinos), mover_Ninnos(ListNinos)) ; true),   
+    ((findall(X,  niño(X), Listniños), mover_niños(Listniños)) ; true),   
     Modulo is Tiempo mod Interval, try_change_enviroment(Modulo,N,M),
     T is Tiempo+1, ver_tablero,
     simulacion(T,Interval,N,M).
@@ -371,10 +379,17 @@ informe(N,M,Minuto, Mensaje) :-
     close(output).
     
 
- 
-main(N,M,Ps,Po,Ninnos,T) :-
-    retractall(tablero(X)), retractall(no_ninnos(X)),
-    tablero(N,M,Tablero), assert(tablero(Tablero)), assert(no_ninnos(Ninnos)),
+/*
+N: cantidad de filas del tablero a generar
+M: cantidad de columnas del tablero a generar
+Ps: porciento de suciedad inicial
+Po: porciento de obstaculos a ubicar
+niños: cantidad de niños
+T: periodo de cambio del ambiente
+*/
+main(N,M,Ps,Po,niños,T) :-
+    retractall(tablero(X)), retractall(no_niños(X)),
+    tablero(N,M,Tablero), assert(tablero(Tablero)), assert(no_niños(niños)),
     Mult is N*M,
     parte(Mult,Ps,Cs),
     parte(Mult,Po,Co),
